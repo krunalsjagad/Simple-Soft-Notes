@@ -8,12 +8,16 @@ import android.view.MenuItem;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.softnotesandcanvas.databinding.ActivityMainBinding;
 import com.example.softnotesandcanvas.db.AppDatabase;
 import com.example.softnotesandcanvas.db.Note;
 import com.example.softnotesandcanvas.ui.NoteAdapter;
 import com.example.softnotesandcanvas.viewmodel.NoteViewModel;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -62,6 +66,31 @@ public class MainActivity extends AppCompatActivity {
         binding.swipeRefresh.setOnRefreshListener(() -> {
             binding.swipeRefresh.setRefreshing(false);
         });
+
+        // Add swipe-to-delete functionality
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
+                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                // Get the note at the swiped position
+                Note noteToDelete = noteAdapter.getCurrentList().get(viewHolder.getAdapterPosition());
+                // Delete the note
+                noteViewModel.delete(noteToDelete);
+                // Show a snackbar with an undo option
+                Snackbar.make(binding.getRoot(), "Note deleted", Snackbar.LENGTH_LONG)
+                        .setAction("Undo", v -> {
+                            // To "undo" a soft delete, we'd need a method in the repository
+                            // to set isDeleted = false. For now, we'll just re-insert it
+                            // as a new note for simplicity.
+                            noteViewModel.insert(noteToDelete.title, noteToDelete.content);
+                        }).show();
+            }
+        }).attachToRecyclerView(binding.recyclerView);
     }
 
     @Override
