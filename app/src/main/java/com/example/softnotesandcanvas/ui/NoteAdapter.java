@@ -19,8 +19,13 @@ import java.util.Objects;
 // ✅ Updated ListAdapter to use the consolidated 'db.Note' model
 public class NoteAdapter extends ListAdapter<Note, NoteAdapter.NoteViewHolder> {
 
-    public NoteAdapter() {
+    public interface OnItemClickListener {
+        void onItemClick(Note note);
+    }
+    private final OnItemClickListener listener;
+    public NoteAdapter(OnItemClickListener listener) {
         super(DIFF);
+        this.listener = listener;
     }
 
     @NonNull
@@ -32,7 +37,7 @@ public class NoteAdapter extends ListAdapter<Note, NoteAdapter.NoteViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
-        holder.bind(getItem(position));
+        holder.bind(getItem(position), listener);
     }
 
     static class NoteViewHolder extends RecyclerView.ViewHolder {
@@ -43,15 +48,20 @@ public class NoteAdapter extends ListAdapter<Note, NoteAdapter.NoteViewHolder> {
             super(itemView);
             title = itemView.findViewById(R.id.note_title);
             content = itemView.findViewById(R.id.note_content);
-            itemView.setOnClickListener(v -> {
+            //  itemView.setOnClickListener(v -> {
                 // Optional: open editor. Implement as needed in your app.
-            });
+            //  });
         }
 
-        void bind(Note note) {
+        void bind(final Note note, final OnItemClickListener listener) {
             title.setText(note.title != null ? note.title : "");
-            // ✅ Use the standardized 'content' field
             content.setText(note.content != null ? note.content : "");
+
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onItemClick(note);
+                }
+            });
         }
     }
 

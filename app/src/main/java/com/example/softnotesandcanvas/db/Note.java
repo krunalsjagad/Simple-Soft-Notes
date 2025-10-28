@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
 import com.google.firebase.firestore.ServerTimestamp;
-
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
@@ -22,7 +22,7 @@ import java.util.UUID;
 @Entity(tableName = "notes")
 // Tell Room to use our Converters class for this entity
 @TypeConverters({Converters.class})
-public class Note {
+public class Note implements Serializable {
 
     @PrimaryKey
     @NonNull

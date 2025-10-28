@@ -24,7 +24,7 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NoteAdapter.OnItemClickListener {
 
     private ActivityMainBinding binding;
     private FirebaseAuth mAuth;
@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         mDb = AppDatabase.getInstance(getApplicationContext());
 
         // RecyclerView setup
-        noteAdapter = new NoteAdapter();
+        noteAdapter = new NoteAdapter(this);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerView.setAdapter(noteAdapter);
 
@@ -91,6 +91,14 @@ public class MainActivity extends AppCompatActivity {
                         }).show();
             }
         }).attachToRecyclerView(binding.recyclerView);
+    }
+
+    @Override
+    public void onItemClick(Note note) {
+        // When a note is clicked, open the editor and pass the note object
+        Intent intent = new Intent(MainActivity.this, NoteEditorActivity.class);
+        intent.putExtra("EXISTING_NOTE", note); // Use the key "EXISTING_NOTE"
+        startActivity(intent);
     }
 
     @Override
