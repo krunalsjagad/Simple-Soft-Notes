@@ -1,0 +1,21 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+// ❌ DELETED - This legacy buildscript block conflicts with the version catalog
+// and is incompatible with Android Studio Ladybug's expected configuration.
+// buildscript {
+//     repositories {
+//         google()
+//         mavenCentral()
+//     }
+//     dependencies {
+//         classpath 'com.android.tools.build:gradle:8.1.1' // or your version
+//         classpath 'com.google.gms:google-services:4.3.15' // Firebase plugin
+//     }
+// }
+
+plugins {
+    alias(libs.plugins.android.application) apply false
+    // ✅ Add the google-services plugin using its alias from settings.gradle
+    // or by its ID if you haven't added an alias.
+    id 'com.google.gms.google-services' version '4.4.2' apply false // Example version, check for latest
+}

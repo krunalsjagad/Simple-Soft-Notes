@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "8934449843",
+    "project_id": "soft-notes-and-canvas",
+    "storage_bucket": "soft-notes-and-canvas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:8934449843:android:8493763d285a1130ca06c6",
+        "android_client_info": {
+          "package_name": "com.example.softnotesandcanvas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgIMCvY3oxdvVd-0H0i0klPNFoaBlm7KQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
