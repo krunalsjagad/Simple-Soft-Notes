@@ -22,9 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * This is the refactored repository, acting as the Single Source of Truth.
- * It manages both the local Room database (via NoteDao) and the remote
- * FirebaseFirestore, implementing the "offline-first" architecture.
+ * Manages both local (Room) and remote (Firestore) data, acting as the Single Source of Truth.
  */
 public class NoteRepository {
     private static final String TAG = "NoteRepository";
@@ -36,10 +34,14 @@ public class NoteRepository {
     private final FirebaseFirestore firestore;
     private final SyncManager syncManager;
     private final String deviceId;
+    // ✅ Store application context to use in methods
+    private final Application application;
 
     private ListenerRegistration firestoreListener;
 
     public NoteRepository(Application app) {
+        // ✅ Assign the application context to the class field
+        this.application = app;
         AppDatabase db = AppDatabase.getInstance(app);
         noteDao = db.noteDao();
         io = Executors.newSingleThreadExecutor();
@@ -48,8 +50,30 @@ public class NoteRepository {
         deviceId = DeviceUtil.getDeviceId(app.getApplicationContext());
     }
 
+    /**
+     * ✅ CORRECTED: Use the renamed DAO method to get active notes.
+     */
     public LiveData<List<Note>> getNotesForUser(String uid) {
-        return noteDao.getAllActiveNotesForUser(uid);
+        return noteDao.getActiveNotesForUser(uid);
+    }
+
+    /**
+     * ✅ CORRECTED: This method is now correctly wired to the DAO.
+     */
+    public LiveData<List<Note>> getTrashedNotes(String userId) {
+        return noteDao.getTrashedNotesForUser(userId);
+    }
+
+    /**
+     * ✅ CORRECTED: This method now correctly moves a note to the trash.
+     * It uses the correct executor 'io' and the 'application' context.
+     */
+    public void trash(Note note) {
+        io.execute(() -> {
+            noteDao.trashNote(note.id, new Date(), DeviceUtil.getDeviceId(application));
+            // Also schedule a sync to update Firestore
+            syncManager.scheduleSync(note.id);
+        });
     }
 
     public void startFirestoreListener(String uid) {
@@ -76,54 +100,36 @@ public class NoteRepository {
             for (DocumentChange dc : snapshots.getDocumentChanges()) {
                 Note remoteNote = dc.getDocument().toObject(Note.class);
 
-                // Ignore changes that originated from this device
                 if (deviceId.equals(remoteNote.lastEditedByDeviceId)) {
                     Log.d(TAG, "Ignoring echo of our own change for note: " + remoteNote.id);
                     continue;
                 }
 
-                // ✅ --- CONFLICT DETECTION LOGIC ---
-                // Before writing, check the status of the local note.
                 Note localNote = noteDao.getNoteById(remoteNote.id);
                 boolean isConflict = false;
 
                 if (localNote != null && localNote.syncStatus != SyncStatus.SYNCED) {
-                    // The local note has pending changes (SYNCING, OFFLINE, or CONFLICT).
-                    // We must check timestamps to see who wins.
                     if (remoteNote.updatedAt != null && remoteNote.updatedAt.after(localNote.updatedAt)) {
-                        // The remote note is *newer* than our local, un-synced note.
-                        // This is a CONFLICT. We must preserve the local changes.
                         isConflict = true;
                     } else {
-                        // The local note is newer or same. Let the local version win.
-                        // The local version will be synced up by the SyncWorker eventually.
-                        // So, we *ignore* this incoming remote change.
                         Log.w(TAG, "Conflict detected, but local is newer. Ignoring remote change for: " + remoteNote.id);
                         continue;
                     }
                 }
-                // --- END CONFLICT DETECTION ---
 
                 switch (dc.getType()) {
                     case ADDED:
                     case MODIFIED:
                         if (isConflict) {
-                            // ✅ Mark the note as CONFLICT, but do *not* overwrite
-                            // the user's local content.
                             Log.w(TAG, "CONFLICT detected! Marking note for resolution: " + remoteNote.id);
                             noteDao.updateSyncStatus(remoteNote.id, SyncStatus.CONFLICT);
                         } else {
-                            // No conflict. It's safe to accept the server version.
                             Log.d(TAG, "Remote change applied locally: " + remoteNote.id);
                             remoteNote.syncStatus = SyncStatus.SYNCED;
                             noteDao.insertOrUpdateNote(remoteNote);
                         }
                         break;
                     case REMOVED:
-                        // This case handles a document being deleted on remote.
-                        // With our soft-delete logic, this should just be a
-                        // MODIFIED event (isDeleted=true).
-                        // We will apply the same conflict logic.
                         if (isConflict) {
                             noteDao.updateSyncStatus(remoteNote.id, SyncStatus.CONFLICT);
                         } else {
@@ -162,12 +168,11 @@ public class NoteRepository {
         });
     }
 
-    public void delete(Note note) {
-        io.execute(() -> {
-            noteDao.softDeleteNote(note.id, new Date(), deviceId);
-            syncManager.scheduleSync(note.id);
-        });
-    }
+    /**
+     * ✅ DEPRECATED: This method is replaced by trash(Note note).
+     * You can now safely remove this from your repository.
+     */
+    // public void delete(Note note) { ... }
 
     public void updateSyncStatus(String noteId, SyncStatus status) {
         io.execute(() -> noteDao.updateSyncStatus(noteId, status));
@@ -175,10 +180,9 @@ public class NoteRepository {
 
     public void clearAll() {
         io.execute(() -> {
-            stopFirestoreListener(); // Stop listening before wiping
-            syncManager.cancelAllSyncs(); // Cancel pending jobs
-            noteDao.nukeTable(); // Wipe local data
+            stopFirestoreListener();
+            syncManager.cancelAllSyncs();
+            noteDao.nukeTable();
         });
     }
 }
-

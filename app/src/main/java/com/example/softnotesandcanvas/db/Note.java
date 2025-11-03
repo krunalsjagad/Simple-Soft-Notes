@@ -57,6 +57,9 @@ public class Note implements Serializable {
     @ColumnInfo(name = "syncStatus")
     public SyncStatus syncStatus;
 
+    @ColumnInfo(name = "is_trashed", defaultValue = "0")
+    public boolean isTrashed = false;
+
     /**
      * Default constructor for Room and Firestore deserialization.
      */

@@ -4,9 +4,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.SearchView;
+import android.widget.Toast;
+import android.content.SharedPreferences;
+import android.widget.TextView;
+import java.util.Objects;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import com.google.android.material.navigation.NavigationView;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -33,13 +43,35 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
     private NoteViewModel noteViewModel;
     private NoteAdapter noteAdapter;
 
+    private DrawerLayout drawerLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        // ✅ Initialize views AFTER setContentView
+        drawerLayout = findViewById(R.id.drawer_layout);
+        NavigationView navigationView = findViewById(R.id.nav_view);
+
         setSupportActionBar(binding.toolbar);
+
+        // ✅ Get the header view from the navigation view FIRST
+        View headerView = navigationView.getHeaderView(0);
+
+        // ✅ NOW you can find the TextView inside the header view
+        TextView navHeaderName = headerView.findViewById(R.id.nav_header_name);
+
+        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        String userName = prefs.getString("user_name", "SoftNotes User");
+
+        navHeaderName.setText(getCapitalizedName(userName));
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, binding.toolbar,
+                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
 
         mAuth = FirebaseAuth.getInstance();
         mDb = AppDatabase.getInstance(getApplicationContext());
@@ -78,19 +110,67 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 // Get the note at the swiped position
-                Note noteToDelete = noteAdapter.getCurrentList().get(viewHolder.getAdapterPosition());
-                // Delete the note
-                noteViewModel.delete(noteToDelete);
+                Note noteToTrash = noteAdapter.getCurrentList().get(viewHolder.getAdapterPosition());
+                noteViewModel.trash(noteToTrash);
                 // Show a snackbar with an undo option
-                Snackbar.make(binding.getRoot(), "Note deleted", Snackbar.LENGTH_LONG)
+                Snackbar.make(binding.getRoot(), "Note moved to trash", Snackbar.LENGTH_LONG)
                         .setAction("Undo", v -> {
                             // To "undo" a soft delete, we'd need a method in the repository
                             // to set isDeleted = false. For now, we'll just re-insert it
                             // as a new note for simplicity.
-                            noteViewModel.insert(noteToDelete.title, noteToDelete.content);
+                            // noteViewModel.insert(noteToDelete.title, noteToDelete.content);
                         }).show();
             }
         }).attachToRecyclerView(binding.recyclerView);
+
+        // ✅ Add the listener for the navigation drawer HERE
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_search) {
+                binding.searchView.setVisibility(binding.searchView.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+                if (binding.searchView.getVisibility() == View.VISIBLE) {
+                    binding.searchView.setIconified(false); // Open the keyboard
+                }
+            } else if (itemId == R.id.nav_new_note) {
+                binding.fab.performClick();
+            } else if (itemId == R.id.nav_trash) {
+                startActivity(new Intent(MainActivity.this, TrashActivity.class));
+            } else if (itemId == R.id.nav_favorites ||
+                    itemId == R.id.nav_settings ||
+                    itemId == R.id.nav_about) {
+                Toast.makeText(MainActivity.this, item.getTitle() + " - Coming Soon!", Toast.LENGTH_SHORT).show();
+            }
+
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return true;
+        });
+
+    }
+
+    private String getCapitalizedName(String name) {
+        if (name == null || name.isEmpty()) {
+            return "";
+        }
+        String[] words = name.split("\\s");
+        StringBuilder capitalizedWord = new StringBuilder();
+        for (String w : words) {
+            if(w.length() > 0) {
+                String first = w.substring(0, 1);
+                String afterfirst = w.substring(1);
+                capitalizedWord.append(first.toUpperCase()).append(afterfirst).append(" ");
+            }
+        }
+        return capitalizedWord.toString().trim();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
     }
 
     @Override

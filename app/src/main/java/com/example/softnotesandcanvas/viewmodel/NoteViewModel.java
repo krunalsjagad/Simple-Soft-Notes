@@ -7,27 +7,25 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-// ✅ Import the single, consolidated Note model from the 'db' package
 import com.example.softnotesandcanvas.db.Note;
 import com.example.softnotesandcanvas.repository.NoteRepository;
 
 import java.util.List;
-import java.util.UUID;
 
-// ✅ Updated to use the consolidated 'db.Note' model
 public class NoteViewModel extends AndroidViewModel {
-    private final NoteRepository repo;
+    // ✅ Use a single, consistent name for the repository
+    private final NoteRepository mRepository;
     private final MutableLiveData<String> currentUid = new MutableLiveData<>();
     private LiveData<List<Note>> notes;
 
     public NoteViewModel(@NonNull Application application) {
         super(application);
-        repo = new NoteRepository(application);
+        // ✅ Initialize the correct repository variable
+        mRepository = new NoteRepository(application);
     }
 
     /**
-     * Sets the user ID and initializes the Firestore listener.
-     * This loads the notes from the local DB and listens for remote changes.
+     * Sets the user ID and initializes the data loading and sync listeners.
      * @param uid The Firebase user ID.
      */
     public void loadNotesForUser(String uid) {
@@ -35,11 +33,9 @@ public class NoteViewModel extends AndroidViewModel {
             return;
         }
         currentUid.setValue(uid);
-        // ✅ Start the Firestore listener for real-time updates
-        repo.startFirestoreListener(uid);
-        // ✅ Get the LiveData for notes, which is now sourced from the local DB
-        // but updated by the Firestore listener.
-        notes = repo.getNotesForUser(uid);
+        mRepository.startFirestoreListener(uid);
+        // Correctly get the active notes for the main screen
+        notes = mRepository.getNotesForUser(uid);
     }
 
     public LiveData<List<Note>> getNotes() {
@@ -47,31 +43,41 @@ public class NoteViewModel extends AndroidViewModel {
     }
 
     /**
+     * ✅ NEW: Gets the list of trashed notes for the TrashActivity.
+     * @param userId The current user's ID.
+     * @return LiveData list of trashed notes.
+     */
+    public LiveData<List<Note>> getTrashedNotes(String userId) {
+        // This will call the getTrashedNotesForUser method in your repository
+        return mRepository.getTrashedNotes(userId);
+    }
+
+    /**
      * Creates a new note, saves it locally, and queues it for sync.
-     * @param title The title of the note.
-     * @param content The content of the note.
      */
     public void insert(String title, String content) {
         String uid = currentUid.getValue();
-        if (uid == null) return; // User must be logged in
-        repo.insert(title, content, uid);
+        if (uid == null) return;
+        mRepository.insert(title, content, uid);
     }
 
     /**
-     * Updates an existing note, saves it locally, and queues it for sync.
-     * @param note The note object with updated title and/or content.
+     * Updates an existing note locally and queues it for sync.
      */
     public void update(Note note) {
         String uid = currentUid.getValue();
-        if (uid == null) return; // User must be logged in
-        repo.update(note);
+        if (uid == null) return;
+        mRepository.update(note);
     }
 
     /**
-     * Soft-deletes a note locally and queues the delete operation for sync.
-     * @param note The note to delete.
+     * ✅ MODIFIED: Moves a note to the trash instead of permanently deleting it.
+     * This method will be called when a user swipes a note.
+     * @param note The note to move to the trash.
      */
-    public void delete(Note note) {
-        repo.delete(note);
+    public void trash(Note note) {
+        // This should call the 'trash' method in your repository,
+        // which in turn calls the 'trashNote' method in your DAO.
+        mRepository.trash(note);
     }
 }
