@@ -76,6 +76,26 @@ public class NoteRepository {
         });
     }
 
+    /**
+     * ✅ NEW: Restores a note from the trash.
+     */
+    public void restore(Note note) {
+        io.execute(() -> {
+            noteDao.restoreNote(note.id, new Date(), DeviceUtil.getDeviceId(application));
+            syncManager.scheduleSync(note.id);
+        });
+    }
+
+    /**
+     * ✅ NEW: Marks a note for permanent deletion.
+     */
+    public void deletePermanently(Note note) {
+        io.execute(() -> {
+            noteDao.markAsDeleted(note.id, new Date(), DeviceUtil.getDeviceId(application));
+            syncManager.scheduleSync(note.id);
+        });
+    }
+
     public void startFirestoreListener(String uid) {
         if (uid == null) return;
 

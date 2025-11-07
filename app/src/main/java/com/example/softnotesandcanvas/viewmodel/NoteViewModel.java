@@ -80,4 +80,18 @@ public class NoteViewModel extends AndroidViewModel {
         // which in turn calls the 'trashNote' method in your DAO.
         mRepository.trash(note);
     }
+
+    /**
+     * ✅ NEW: Restores a note from the trash.
+     */
+    public void restore(Note note) {
+        mRepository.restore(note);
+    }
+
+    /**
+     * ✅ NEW: Permanently deletes a note (marks as deleted).
+     */
+    public void deletePermanently(Note note) {
+        mRepository.deletePermanently(note);
+    }
 }

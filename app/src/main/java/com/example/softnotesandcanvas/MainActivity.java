@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
                             // To "undo" a soft delete, we'd need a method in the repository
                             // to set isDeleted = false. For now, we'll just re-insert it
                             // as a new note for simplicity.
-                            // noteViewModel.insert(noteToDelete.title, noteToDelete.content);
+                            noteViewModel.restore(noteToTrash);
                         }).show();
             }
         }).attachToRecyclerView(binding.recyclerView);

@@ -23,23 +23,23 @@ public interface NoteDao {
     void insertOrUpdateNote(Note note);
 
     /**
-     * Gets all non-trashed notes for a specific user.
+     * Gets all non-trashed, non-deleted notes for a specific user.
      * This is the main query for the MainActivity list.
      *
      * @param userId The user's Firebase UID.
      * @return A LiveData list of active notes for that user.
      */
-    @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 0 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 0 AND isDeleted = 0 ORDER BY updatedAt DESC")
     LiveData<List<Note>> getActiveNotesForUser(String userId);
 
     /**
-     * ✅ NEW: Gets all trashed notes for a specific user.
+     * ✅ UPDATED: Gets all trashed, non-deleted notes for a specific user.
      * This query is for the TrashActivity.
      *
      * @param userId The user's Firebase UID.
      * @return A LiveData list of trashed notes for that user.
      */
-    @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 1 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 1 AND isDeleted = 0 ORDER BY updatedAt DESC")
     LiveData<List<Note>> getTrashedNotesForUser(String userId);
 
     /**
@@ -61,13 +61,28 @@ public interface NoteDao {
     Note getNoteById(String noteId);
 
     /**
-     * ✅ NEW: Moves a note to the trash by setting the 'is_trashed' flag to true.
-     * This is what you will call when a user swipes a note.
+     * ✅ NEW: Restores a note from the trash by setting 'is_trashed' flag to false.
+     * This is used for the "Undo" action and restoring from the trash.
      *
-     * @param noteId The ID of the note to move to trash.
+     * @param noteId The ID of the note to restore.
+     * @param timestamp The time of the restoration.
+     * @param deviceId The ID of the device performing the action.
      */
-    @Query("UPDATE notes SET is_trashed = 1 WHERE id = :noteId")
-    void trashNoteById(int noteId);
+    @Query("UPDATE notes SET is_trashed = 0, updatedAt = :timestamp, lastEditedByDeviceId = :deviceId, syncStatus = 'SYNCING' WHERE id = :noteId")
+    void restoreNote(String noteId, Date timestamp, String deviceId);
+
+    /**
+     * ✅ NEW: Marks a note as permanently deleted.
+     * This will be picked up by the sync manager to delete from Firestore
+     * and will be hidden from all UIs.
+     *
+     * @param noteId The ID of the note to mark as deleted.
+     * @param timestamp The time of the deletion.
+     * @param deviceId The ID of the device performing the action.
+     */
+    @Query("UPDATE notes SET isDeleted = 1, updatedAt = :timestamp, lastEditedByDeviceId = :deviceId, syncStatus = 'SYNCING' WHERE id = :noteId")
+    void markAsDeleted(String noteId, Date timestamp, String deviceId);
+
 
     /**
      * ✅ MODIFIED: Moves a note to the trash by setting the 'isDeleted' flag to true.

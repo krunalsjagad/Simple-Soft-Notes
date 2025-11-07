@@ -1,6 +1,7 @@
 package com.example.softnotesandcanvas;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -16,6 +17,7 @@ public class AuthActivity extends AppCompatActivity {
 
     private ActivityAuthBinding binding;
     private FirebaseAuth mAuth;
+    private boolean isSignUpMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,21 +25,32 @@ public class AuthActivity extends AppCompatActivity {
         binding = ActivityAuthBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        // Set click listeners
-        binding.buttonSignIn.setOnClickListener(v -> attemptSignIn());
-        binding.buttonSignUp.setOnClickListener(v -> attemptSignUp());
+        binding.buttonSignIn.setOnClickListener(v -> {
+            binding.layoutName.setVisibility(View.GONE);
+            binding.textViewSubtitle.setText("Sign in to your account");
+            attemptSignIn();
+        });
+
+        binding.buttonSignUp.setOnClickListener(v -> {
+            if (!isSignUpMode) {
+                isSignUpMode = true;
+                binding.layoutName.setVisibility(View.VISIBLE);
+                binding.textViewSubtitle.setText("Create your account");
+                binding.buttonSignUp.setText("Confirm Sign Up");
+                binding.buttonSignIn.setEnabled(false);
+            } else {
+                attemptSignUp();
+            }
+        });
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
-            // User is already logged in, go to MainActivity
             goToMainActivity();
         }
     }
@@ -55,10 +68,8 @@ public class AuthActivity extends AppCompatActivity {
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        // Sign in success, go to MainActivity
                         goToMainActivity();
                     } else {
-                        // If sign in fails, display a message to the user.
                         Toast.makeText(AuthActivity.this, "Authentication failed: " + task.getException().getMessage(),
                                 Toast.LENGTH_LONG).show();
                     }
@@ -67,8 +78,16 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     private void attemptSignUp() {
+        String name = binding.editTextName.getText().toString().trim();
         String email = binding.editTextEmail.getText().toString().trim();
         String password = binding.editTextPassword.getText().toString().trim();
+
+        if (TextUtils.isEmpty(name)) {
+            binding.layoutName.setError("Name is required.");
+            return;
+        } else {
+            binding.layoutName.setError(null);
+        }
 
         if (!validateForm(email, password)) {
             return;
@@ -79,10 +98,10 @@ public class AuthActivity extends AppCompatActivity {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        // Sign up success, go to MainActivity
+                        SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+                        prefs.edit().putString("user_name", name).apply();
                         goToMainActivity();
                     } else {
-                        // If sign up fails, display a message to the user.
                         Toast.makeText(AuthActivity.this, "Sign up failed: " + task.getException().getMessage(),
                                 Toast.LENGTH_LONG).show();
                     }
@@ -91,47 +110,38 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     private boolean validateForm(String email, String password) {
+        boolean valid = true;
+
         if (TextUtils.isEmpty(email)) {
             binding.layoutEmail.setError("Email is required.");
-            return false;
+            valid = false;
         } else {
             binding.layoutEmail.setError(null);
         }
 
         if (TextUtils.isEmpty(password)) {
             binding.layoutPassword.setError("Password is required.");
-            return false;
-        } else {
-            binding.layoutPassword.setError(null);
-        }
-
-        if (password.length() < 6) {
+            valid = false;
+        } else if (password.length() < 6) {
             binding.layoutPassword.setError("Password must be at least 6 characters.");
-            return false;
+            valid = false;
         } else {
             binding.layoutPassword.setError(null);
         }
 
-        return true;
+        return valid;
     }
 
     private void goToMainActivity() {
         Intent intent = new Intent(AuthActivity.this, MainActivity.class);
-        // Clear the activity stack so the user can't press "back" to the login screen
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        finish(); // Close this AuthActivity
+        finish();
     }
 
     private void toggleLoading(boolean isLoading) {
-        if (isLoading) {
-            binding.progressBar.setVisibility(View.VISIBLE);
-            binding.buttonSignIn.setEnabled(false);
-            binding.buttonSignUp.setEnabled(false);
-        } else {
-            binding.progressBar.setVisibility(View.GONE);
-            binding.buttonSignIn.setEnabled(true);
-            binding.buttonSignUp.setEnabled(true);
-        }
+        binding.progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        binding.buttonSignIn.setEnabled(!isLoading);
+        binding.buttonSignUp.setEnabled(!isLoading);
     }
 }
