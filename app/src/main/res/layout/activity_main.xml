@@ -17,21 +17,21 @@
 
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+            android:layout_height="wrap_content">
 
-            <androidx.appcompat.widget.Toolbar
+            <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:title="SoftNotes">
-                <SearchView
-                    android:id="@+id/search_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone"
-                    android:queryHint="Search notes by title..." />
-            </androidx.appcompat.widget.Toolbar>
+                android:layout_height="?attr/actionBarSize"
+                app:title="SoftNotes" />
+
+            <SearchView
+                android:id="@+id/search_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:queryHint="Search notes by title..." />
+
         </com.google.android.material.appbar.AppBarLayout>
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -71,8 +71,7 @@
             android:layout_height="wrap_content"
             android:contentDescription="Create note"
             app:srcCompat="@android:drawable/ic_input_add"
-            app:layout_anchor="@id/recycler_view"
-            app:layout_anchorGravity="bottom|end"
+            android:layout_gravity="bottom|end"
             android:layout_margin="16dp" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
@@ -86,6 +85,5 @@
         app:menu="@menu/nav_menu"
         app:itemIconSize="24dp"
         app:itemIconTint="@null"/>
-
 
 </androidx.drawerlayout.widget.DrawerLayout>

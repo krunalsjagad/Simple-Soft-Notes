@@ -27,6 +27,7 @@ public class TrashActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeHelper.applyTheme(this);
         super.onCreate(savedInstanceState);
         binding = ActivityTrashBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());

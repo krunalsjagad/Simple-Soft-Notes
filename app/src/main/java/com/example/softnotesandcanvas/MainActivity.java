@@ -14,6 +14,10 @@ import java.util.Objects;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+// ADDED: Import for theme delegate
+import androidx.appcompat.app.AppCompatDelegate;
+// ADDED: Import for Switch
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import com.google.android.material.navigation.NavigationView;
@@ -27,6 +31,8 @@ import com.example.softnotesandcanvas.db.AppDatabase;
 import com.example.softnotesandcanvas.db.Note;
 import com.example.softnotesandcanvas.ui.NoteAdapter;
 import com.example.softnotesandcanvas.viewmodel.NoteViewModel;
+// ADDED: Import for new ThemeHelper class
+import com.example.softnotesandcanvas.ThemeHelper;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -47,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeHelper.applyTheme(this);
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -54,6 +61,27 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
         // ✅ Initialize views AFTER setContentView
         drawerLayout = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
+
+        // --- ADDED: Theme Switch Setup ---
+        // Get the theme menu item
+        MenuItem themeItem = navigationView.getMenu().findItem(R.id.nav_theme);
+        View actionView = themeItem.getActionView();
+
+        // Ensure the actionView is a SwitchCompat
+        if (actionView instanceof SwitchCompat) {
+            SwitchCompat themeSwitch = (SwitchCompat) actionView;
+
+            // Set the switch's initial state based on the saved preference
+            themeSwitch.setChecked(ThemeHelper.isDarkMode(this));
+
+            // Set a listener to react to switch changes
+            themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                // Save and apply the new theme
+                // This will cause the activity to restart
+                ThemeHelper.setTheme(this, isChecked);
+            });
+        }
+        // --- End Theme Switch Setup ---
 
         setSupportActionBar(binding.toolbar);
 
@@ -127,6 +155,12 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
         navigationView.setNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
 
+            // ADDED: Handle theme item click to prevent drawer from closing
+            if (itemId == R.id.nav_theme) {
+                // Do nothing when the row is clicked; the switch listener will handle it
+                return false; // Return false so it doesn't get "selected"
+            }
+
             if (itemId == R.id.nav_search) {
                 binding.searchView.setVisibility(binding.searchView.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
                 if (binding.searchView.getVisibility() == View.VISIBLE) {
@@ -136,8 +170,8 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
                 binding.fab.performClick();
             } else if (itemId == R.id.nav_trash) {
                 startActivity(new Intent(MainActivity.this, TrashActivity.class));
+                // MODIFIED: Removed 'nav_settings' from this 'else if' block
             } else if (itemId == R.id.nav_favorites ||
-                    itemId == R.id.nav_settings ||
                     itemId == R.id.nav_about) {
                 Toast.makeText(MainActivity.this, item.getTitle() + " - Coming Soon!", Toast.LENGTH_SHORT).show();
             }
