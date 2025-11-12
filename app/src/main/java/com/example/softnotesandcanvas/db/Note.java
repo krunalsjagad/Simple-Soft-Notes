@@ -1,3 +1,6 @@
+//
+// [File: SoftNotesandCanvas/app/src/main/java/com/example/softnotesandcanvas/db/Note.java]
+//
 package com.example.softnotesandcanvas.db;
 
 import androidx.annotation.NonNull;
@@ -12,17 +15,14 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Entity class that defines the 'notes' table in the Room database.
- * This class also serves as the data model object for the application.
- *
- * ✅ This is now the *single* source of truth for the Note model.
- * The redundant `model/Note.java` has been removed.
- */
 @Entity(tableName = "notes")
-// Tell Room to use our Converters class for this entity
 @TypeConverters({Converters.class})
 public class Note implements Serializable {
+
+    // --- ADD THESE CONSTANTS ---
+    public static final String TYPE_TEXT = "TEXT";
+    public static final String TYPE_CANVAS = "CANVAS";
+    // ---------------------------
 
     @PrimaryKey
     @NonNull
@@ -35,11 +35,18 @@ public class Note implements Serializable {
     @ColumnInfo(name = "title")
     public String title;
 
-    // ✅ Renamed 'body' to 'content' to standardize the model
     @ColumnInfo(name = "content")
-    public String content;
+    public String content; // Will be null for CANVAS notes
 
-    // ✅ Added @ServerTimestamp for Firestore
+    // --- ADD THESE NEW FIELDS ---
+    @ColumnInfo(name = "type", defaultValue = TYPE_TEXT)
+    @NonNull
+    public String type;
+
+    @ColumnInfo(name = "canvasImagePath")
+    public String canvasImagePath; // Will be null for TEXT notes
+    // --------------------------
+
     @ServerTimestamp
     @ColumnInfo(name = "createdAt")
     public Date createdAt;
@@ -65,32 +72,40 @@ public class Note implements Serializable {
      */
     public Note() {
         // Public no-arg constructor is required by Room/Firestore
+        // --- ADD THESE DEFAULTS ---
+        this.type = TYPE_TEXT;
+        this.canvasImagePath = null;
+        // --------------------------
     }
 
     /**
-     * Convenience constructor for creating a new, unsaved note.
+     * Convenience constructor for creating a new, unsaved TEXT note.
      * Generates a new UUID, sets timestamps, and defaults states.
      *
      * @param userId The ID of the user creating the note.
      * @param title The title of the note.
-     * @param content The body content of the note.
+     * @param content The body content of the text note.
      * @param deviceId The unique ID of the device creating the note.
      */
     public Note(@NonNull String userId, String title, String content, @NonNull String deviceId) {
         this.id = UUID.randomUUID().toString();
         this.userId = userId;
         this.title = title;
-        this.content = content; // ✅ Updated field
+        this.content = content;
         this.createdAt = new Date();
         this.updatedAt = this.createdAt;
         this.lastEditedByDeviceId = deviceId;
         this.isDeleted = false;
-        this.syncStatus = SyncStatus.SYNCING; // New notes start as "SYNCING"
+        this.syncStatus = SyncStatus.SYNCING;
+
+        // --- ADD THESE LINES ---
+        // This constructor is for TEXT notes
+        this.type = TYPE_TEXT;
+        this.canvasImagePath = null;
+        // ---------------------
     }
 
     // --- Overriding equals and hashCode ---
-    // This is good practice for entities to help ListAdapters and
-    // other components differentiate between note objects.
 
     @Override
     public boolean equals(Object o) {
@@ -98,18 +113,25 @@ public class Note implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         Note note = (Note) o;
         return isDeleted == note.isDeleted &&
+                isTrashed == note.isTrashed && // Added isTrashed
                 id.equals(note.id) &&
                 Objects.equals(userId, note.userId) &&
                 Objects.equals(title, note.title) &&
-                Objects.equals(content, note.content) && // ✅ Updated field
+                Objects.equals(content, note.content) &&
                 Objects.equals(createdAt, note.createdAt) &&
                 Objects.equals(updatedAt, note.updatedAt) &&
                 Objects.equals(lastEditedByDeviceId, note.lastEditedByDeviceId) &&
-                syncStatus == note.syncStatus;
+                syncStatus == note.syncStatus &&
+                // --- ADD THESE LINES ---
+                Objects.equals(type, note.type) &&
+                Objects.equals(canvasImagePath, note.canvasImagePath);
+        // ---------------------
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, userId, title, content, createdAt, updatedAt, lastEditedByDeviceId, isDeleted, syncStatus); // ✅ Updated field
+        // --- UPDATE THIS LINE ---
+        return Objects.hash(id, userId, title, content, type, canvasImagePath, createdAt, updatedAt, lastEditedByDeviceId, isDeleted, syncStatus, isTrashed);
+        // ----------------------
     }
 }

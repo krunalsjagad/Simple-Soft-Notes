@@ -2,4 +2,28 @@
     <string name="app_name">Soft Notes and Canvas</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="create_new">Create New</string>
+    <string name="new_note">New Note</string>
+    <string name="new_canvas">New Canvas</string>
+    <string name="title_hint">Title</string>
+    <string name="note_hint">Note</string>
+    <string name="bold">Bold</string>
+    <string name="italic">Italic</string>
+    <string name="underline">Underline</string>
+    <string name="strikethrough">Strikethrough</string>
+    <string name="pen">Pen</string>
+    <string name="eraser">Eraser</string>
+    <string name="text_tool">Text</string>
+    <string name="create_new_note">Create new note</string>
+    <string name="empty_notes_message">No notes yet. Tap + to create one.</string>
+    <string name="empty_trash_message">Trash is empty.</string>
+    <string name="canvas_preview">Canvas Preview</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="sign_in_subtitle">Sign in to sync your notes</string>
+    <string name="sign_in_title">Welcome Back</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="name_hint">Name</string>
 </resources>

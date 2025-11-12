@@ -6,4 +6,9 @@
         android:title="Save"
         android:icon="@android:drawable/ic_menu_save"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_delete"
+        android:title="Delete"
+        android:icon="@android:drawable/ic_menu_delete"
+        app:showAsAction="ifRoom" />
 </menu>

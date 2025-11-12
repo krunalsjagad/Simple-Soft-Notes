@@ -178,6 +178,20 @@ public class NoteRepository {
         });
     }
 
+    // --- THIS METHOD IS NOW FIXED ---
+    /**
+     * Inserts a pre-constructed Note object (e.g., a new Canvas note).
+     * @param note The Note to insert.
+     */
+    public void insert(Note note) {
+        // We assume the note object is already complete
+        // FIX: Changed 'executor' to 'io'
+        io.execute(() -> {
+            noteDao.insertOrUpdateNote(note);
+            syncManager.scheduleSync(note.id);
+        });
+    }
+
     public void update(Note note) {
         io.execute(() -> {
             note.updatedAt = new Date();

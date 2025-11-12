@@ -15,27 +15,38 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SoftNotesAndCanvas"
         tools:targetApi="31">
+
         <activity
-            android:name=".NoteEditorActivity"
-            android:exported="false" />
-        <activity
-            android:name=".TrashActivity"
-            android:exported="false" />
+            android:name=".AuthActivity"
+            android:exported="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".AuthActivity"
-            android:exported="true" />
+
         <activity
             android:name=".NoteEditorActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:label="Note Editor"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".TrashActivity"
+            android:exported="false"
+            android:label="Trash"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".CanvasEditorActivity"
+            android:exported="false"
+            android:label="Canvas Editor"
+            android:parentActivityName=".MainActivity" />
+
     </application>
 
 </manifest>

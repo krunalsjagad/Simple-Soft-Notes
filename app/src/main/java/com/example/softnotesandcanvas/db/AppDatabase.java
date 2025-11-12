@@ -6,6 +6,8 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
+import androidx.room.migration.Migration; // <-- Import this
+import androidx.sqlite.db.SupportSQLiteDatabase; // <-- Import this
 
 /**
  * The main Room database class for the application.
@@ -13,7 +15,7 @@ import androidx.room.TypeConverters;
  * It follows a singleton pattern to ensure only one instance of the
  * database exists at any time.
  */
-@Database(entities = {Note.class}, version = 1, exportSchema = false)
+@Database(entities = {Note.class}, version = 2, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -22,6 +24,18 @@ public abstract class AppDatabase extends RoomDatabase {
 
     // Volatile ensures that the instance is immediately visible to all threads
     private static volatile AppDatabase INSTANCE;
+
+    // 2. Define the migration
+    // This tells Room how to add the new columns without deleting data
+    static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            // Add the 'type' column, default all existing notes to "TEXT"
+            database.execSQL("ALTER TABLE notes ADD COLUMN type TEXT NOT NULL DEFAULT '" + Note.TYPE_TEXT + "'");
+            // Add the 'canvasImagePath' column
+            database.execSQL("ALTER TABLE notes ADD COLUMN canvasImagePath TEXT DEFAULT NULL");
+        }
+    };
     private static final String DATABASE_NAME = "notes_database";
 
     /**
@@ -45,7 +59,7 @@ public abstract class AppDatabase extends RoomDatabase {
                             // a proper database migration strategy.
                             // For development, this just wipes and rebuilds the
                             // database on a version schema change.
-                            .fallbackToDestructiveMigration()
+                            .addMigrations(MIGRATION_1_2)
                             .build();
                 }
             }

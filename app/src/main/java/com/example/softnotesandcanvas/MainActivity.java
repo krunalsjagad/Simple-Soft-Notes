@@ -40,6 +40,14 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+// --- ADD THESE IMPORTS for the dialog ---
+import android.app.Dialog;
+import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.LinearLayout;
+// ----------------------------------------
+
 public class MainActivity extends AppCompatActivity implements NoteAdapter.OnItemClickListener {
 
     private ActivityMainBinding binding;
@@ -112,16 +120,17 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
         // ViewModel setup
         noteViewModel = new ViewModelProvider(this).get(NoteViewModel.class);
 
-        // FAB click listener
+        // --- MODIFY THIS FAB CLICK LISTENER ---
         binding.fab.setOnClickListener(v -> {
             FirebaseUser user = mAuth.getCurrentUser();
             if (user == null) {
                 goToAuthActivity();
                 return;
             }
-            Intent intent = new Intent(MainActivity.this, NoteEditorActivity.class);
-            startActivity(intent);
+            // Instead of starting the editor, show the options dialog
+            showAddOptionsDialog();
         });
+        // --- END OF MODIFICATION ---
 
         binding.swipeRefresh.setOnRefreshListener(() -> {
             binding.swipeRefresh.setRefreshing(false);
@@ -182,6 +191,50 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
 
     }
 
+    // --- ADD THIS NEW METHOD for the dialog ---
+    private void showAddOptionsDialog() {
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_add_options);
+
+        LinearLayout layoutNewNote = dialog.findViewById(R.id.layout_new_note);
+        LinearLayout layoutNewCanvas = dialog.findViewById(R.id.layout_new_canvas);
+
+        layoutNewNote.setOnClickListener(v -> {
+            dialog.dismiss();
+            Intent intent = new Intent(MainActivity.this, NoteEditorActivity.class);
+            // Pass the type to the editor
+            intent.putExtra("noteType", Note.TYPE_TEXT);
+            startActivity(intent);
+        });
+
+        layoutNewCanvas.setOnClickListener(v -> {
+            dialog.dismiss();
+            // We will create CanvasEditorActivity in the next step
+            // For now, this will crash if clicked, but we will create the file soon.
+            Intent intent = new Intent(MainActivity.this, CanvasEditorActivity.class);
+            // Pass the type to the editor
+            intent.putExtra("noteType", Note.TYPE_CANVAS);
+            startActivity(intent);
+        });
+
+        // Style the dialog to appear from the bottom
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
+            // Use the background drawable we created
+            window.setBackgroundDrawableResource(R.drawable.dialog_add_background);
+            // Set gravity to bottom
+            window.setGravity(Gravity.BOTTOM);
+            // Remove the default dim background
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        }
+
+        dialog.show();
+    }
+    // --- END OF NEW METHOD ---
+
+
     private String getCapitalizedName(String name) {
         if (name == null || name.isEmpty()) {
             return "";
@@ -207,13 +260,22 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
         }
     }
 
+    // --- MODIFY THIS METHOD to handle different note types ---
     @Override
     public void onItemClick(Note note) {
-        // When a note is clicked, open the editor and pass the note object
-        Intent intent = new Intent(MainActivity.this, NoteEditorActivity.class);
-        intent.putExtra("EXISTING_NOTE", note); // Use the key "EXISTING_NOTE"
+        Intent intent;
+        // Check the note type to open the correct editor
+        if (note.type != null && note.type.equals(Note.TYPE_CANVAS)) {
+            // We will create CanvasEditorActivity soon
+            intent = new Intent(this, CanvasEditorActivity.class);
+        } else {
+            // Default to text editor for old notes (where type is null) or new text notes
+            intent = new Intent(this, NoteEditorActivity.class);
+        }
+        intent.putExtra("EXISTING_NOTE", note); // Pass the entire note object
         startActivity(intent);
     }
+    // --- END OF MODIFICATION ---
 
     @Override
     protected void onStart() {

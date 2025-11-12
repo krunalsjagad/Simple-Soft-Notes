@@ -61,6 +61,16 @@ public class NoteViewModel extends AndroidViewModel {
         mRepository.insert(title, content, uid);
     }
 
+    // --- ADD THIS NEW METHOD ---
+    /**
+     * Inserts a pre-constructed Note object.
+     * @param note The Note to insert.
+     */
+    public void insert(Note note) {
+        // Note object must have userId, deviceId, etc., set BEFORE calling this.
+        mRepository.insert(note);
+    }
+
     /**
      * Updates an existing note locally and queues it for sync.
      */
