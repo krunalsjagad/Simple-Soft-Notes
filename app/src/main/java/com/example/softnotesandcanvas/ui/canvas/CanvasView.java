@@ -154,8 +154,9 @@ public class CanvasView extends View {
 
     public void setEraserMode() {
         isErasing = true;
+        mPaint.setColor(Color.WHITE);
         // Set the paint to "clear" the canvas
-        mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        mPaint.setXfermode(null);
         mPaint.setStrokeWidth(mEraserStrokeWidth);
     }
 

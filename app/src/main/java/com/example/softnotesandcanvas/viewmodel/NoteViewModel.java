@@ -75,8 +75,6 @@ public class NoteViewModel extends AndroidViewModel {
      * Updates an existing note locally and queues it for sync.
      */
     public void update(Note note) {
-        String uid = currentUid.getValue();
-        if (uid == null) return;
         mRepository.update(note);
     }
 
