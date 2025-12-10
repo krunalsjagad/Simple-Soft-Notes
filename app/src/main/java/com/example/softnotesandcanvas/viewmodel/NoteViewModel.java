@@ -14,6 +14,8 @@ import com.example.softnotesandcanvas.repository.NoteRepository;
 import java.util.List;
 
 public class NoteViewModel extends AndroidViewModel {
+    // ✅ 1. Define Filter Modes
+    public enum FilterMode { ALL, TEXT_ONLY, CANVAS_ONLY }
     // ✅ Use a single, consistent name for the repository
     private final NoteRepository mRepository;
     private final MutableLiveData<String> currentUid = new MutableLiveData<>();
@@ -21,6 +23,9 @@ public class NoteViewModel extends AndroidViewModel {
     private final MediatorLiveData<List<Note>> notes = new MediatorLiveData<>();
     private LiveData<List<Note>> currentSource; // Tracks the current active LiveData source
 
+    // ✅ 2. Track current states
+    private FilterMode currentFilterMode = FilterMode.ALL;
+    private String currentSearchQuery = "";
     public NoteViewModel(@NonNull Application application) {
         super(application);
         // ✅ Initialize the correct repository variable
@@ -38,36 +43,61 @@ public class NoteViewModel extends AndroidViewModel {
         currentUid.setValue(uid);
         mRepository.startFirestoreListener(uid);
         // Correctly get the active notes for the main screen
-        updateNotesSource(uid, "");
+        triggerUpdate();
     }
 
-    /**
-     * ✅ NEW: Called when the user types in the search bar.
-     */
+    /** ✅ CHANGED: Update query state and trigger update */
     public void search(String query) {
+        this.currentSearchQuery = (query == null) ? "" : query.trim();
+        triggerUpdate();
+    }
+
+    /** ✅ NEW: Set filter mode and trigger update */
+    public void setFilterMode(FilterMode mode) {
+        this.currentFilterMode = mode;
+        triggerUpdate();
+    }
+
+    /** Helper to ensure UID exists before updating */
+    private void triggerUpdate() {
         String uid = currentUid.getValue();
         if (uid != null) {
-            updateNotesSource(uid, query);
+            updateNotesSource(uid);
         }
     }
 
-    /**
-     * Helper to switch the data source of the 'notes' LiveData.
-     */
-    private void updateNotesSource(String uid, String query) {
-        // 1. Remove the old source so we don't get updates from the wrong query
-        if (currentSource != null) {
-            notes.removeSource(currentSource);
+    /** ✅ CORE LOGIC: Decides which DB query to run based on Filter + Search state */
+    private void updateNotesSource(String uid) {
+        if (currentSource != null) notes.removeSource(currentSource);
+
+        boolean isSearching = !currentSearchQuery.isEmpty();
+
+        switch (currentFilterMode) {
+            case TEXT_ONLY:
+                if (isSearching) {
+                    currentSource = mRepository.searchTextNotes(uid, currentSearchQuery);
+                } else {
+                    currentSource = mRepository.getTextNotesOnly(uid);
+                }
+                break;
+            case CANVAS_ONLY:
+                if (isSearching) {
+                    currentSource = mRepository.searchCanvasNotes(uid, currentSearchQuery);
+                } else {
+                    currentSource = mRepository.getCanvasNotesOnly(uid);
+                }
+                break;
+            case ALL:
+            default:
+                // This uses your existing methods for "All"
+                if (isSearching) {
+                    currentSource = mRepository.searchNotes(uid, currentSearchQuery);
+                } else {
+                    currentSource = mRepository.getNotesForUser(uid);
+                }
+                break;
         }
 
-        // 2. Decide which source to use
-        if (query == null || query.trim().isEmpty()) {
-            currentSource = mRepository.getNotesForUser(uid);
-        } else {
-            currentSource = mRepository.searchNotes(uid, query);
-        }
-
-        // 3. Add the new source
         notes.addSource(currentSource, notes::setValue);
     }
 

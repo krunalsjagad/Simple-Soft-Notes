@@ -113,4 +113,24 @@ public interface NoteDao {
     @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 0 AND isDeleted = 0 AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
     LiveData<List<Note>> searchNotes(String userId, String query);
 
+    // ------------------------------------------------------------
+    // ✅ NEW FILTERING QUERIES (Text-only, Canvas-only, with/without search)
+    // ------------------------------------------------------------
+
+    /** 1. Get ONLY Text Notes (canvasImagePath is empty or null) */
+    @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 0 AND isDeleted = 0 AND (canvasImagePath IS NULL OR canvasImagePath = '') ORDER BY updatedAt DESC")
+    LiveData<List<Note>> getTextNotesOnly(String userId);
+
+    /** 2. Get ONLY Canvas Notes (canvasImagePath is not empty) */
+    @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 0 AND isDeleted = 0 AND (canvasImagePath IS NOT NULL AND canvasImagePath != '') ORDER BY updatedAt DESC")
+    LiveData<List<Note>> getCanvasNotesOnly(String userId);
+
+    /** 3. SEARCH within Text Notes Only */
+    @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 0 AND isDeleted = 0 AND (canvasImagePath IS NULL OR canvasImagePath = '') AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
+    LiveData<List<Note>> searchTextNotes(String userId, String query);
+
+    /** 4. SEARCH within Canvas Notes Only */
+    @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 0 AND isDeleted = 0 AND (canvasImagePath IS NOT NULL AND canvasImagePath != '') AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
+    LiveData<List<Note>> searchCanvasNotes(String userId, String query);
+
 }

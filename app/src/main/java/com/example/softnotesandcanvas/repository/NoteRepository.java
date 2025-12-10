@@ -71,6 +71,26 @@ public class NoteRepository {
         return noteDao.searchNotes(userId, query);
     }
 
+    /** ✅ NEW: Get ONLY text notes */
+    public LiveData<List<Note>> getTextNotesOnly(String userId) {
+        return noteDao.getTextNotesOnly(userId);
+    }
+
+    /** ✅ NEW: Get ONLY canvas notes */
+    public LiveData<List<Note>> getCanvasNotesOnly(String userId) {
+        return noteDao.getCanvasNotesOnly(userId);
+    }
+
+    /** ✅ NEW: Search ONLY text notes */
+    public LiveData<List<Note>> searchTextNotes(String userId, String query) {
+        return noteDao.searchTextNotes(userId, query);
+    }
+
+    /** ✅ NEW: Search ONLY canvas notes */
+    public LiveData<List<Note>> searchCanvasNotes(String userId, String query) {
+        return noteDao.searchCanvasNotes(userId, query);
+    }
+
 
     /**
      * ✅ CORRECTED: This method now correctly moves a note to the trash.

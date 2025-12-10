@@ -134,6 +134,19 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
         // ViewModel setup
         noteViewModel = new ViewModelProvider(this).get(NoteViewModel.class);
 
+        // ✅ NEW: Set up Filter Toggle Listener
+        binding.filterToggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (isChecked) {
+                if (checkedId == R.id.btnFilterAll) {
+                    noteViewModel.setFilterMode(NoteViewModel.FilterMode.ALL);
+                } else if (checkedId == R.id.btnFilterNotes) {
+                    noteViewModel.setFilterMode(NoteViewModel.FilterMode.TEXT_ONLY);
+                } else if (checkedId == R.id.btnFilterCanvas) {
+                    noteViewModel.setFilterMode(NoteViewModel.FilterMode.CANVAS_ONLY);
+                }
+            }
+        });
+
         // --- MODIFY THIS FAB CLICK LISTENER ---
         binding.fab.setOnClickListener(v -> {
             FirebaseUser user = mAuth.getCurrentUser();
