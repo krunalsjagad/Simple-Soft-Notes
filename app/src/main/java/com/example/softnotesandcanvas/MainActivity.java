@@ -70,6 +70,20 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
         drawerLayout = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
 
+        // ✅ NEW: Listen for text changes in the search bar
+        binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                noteViewModel.search(newText);
+                return true;
+            }
+        });
+
         // --- ADDED: Theme Switch Setup ---
         // Get the theme menu item
         MenuItem themeItem = navigationView.getMenu().findItem(R.id.nav_theme);
@@ -171,9 +185,16 @@ public class MainActivity extends AppCompatActivity implements NoteAdapter.OnIte
             }
 
             if (itemId == R.id.nav_search) {
-                binding.searchView.setVisibility(binding.searchView.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+                // Toggle visibility
                 if (binding.searchView.getVisibility() == View.VISIBLE) {
-                    binding.searchView.setIconified(false); // Open the keyboard
+                    binding.searchView.setVisibility(View.GONE);
+
+                    // ✅ NEW: Clear search when hiding so all notes reappear
+                    binding.searchView.setQuery("", false);
+                    noteViewModel.search("");
+                } else {
+                    binding.searchView.setVisibility(View.VISIBLE);
+                    binding.searchView.setIconified(false); // Open keyboard
                 }
             } else if (itemId == R.id.nav_new_note) {
                 binding.fab.performClick();

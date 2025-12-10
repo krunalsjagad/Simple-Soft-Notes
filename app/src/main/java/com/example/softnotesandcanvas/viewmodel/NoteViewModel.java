@@ -5,6 +5,7 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.softnotesandcanvas.db.Note;
@@ -16,7 +17,9 @@ public class NoteViewModel extends AndroidViewModel {
     // ✅ Use a single, consistent name for the repository
     private final NoteRepository mRepository;
     private final MutableLiveData<String> currentUid = new MutableLiveData<>();
-    private LiveData<List<Note>> notes;
+    // ✅ CHANGED: Use MediatorLiveData to switch between all notes and search results
+    private final MediatorLiveData<List<Note>> notes = new MediatorLiveData<>();
+    private LiveData<List<Note>> currentSource; // Tracks the current active LiveData source
 
     public NoteViewModel(@NonNull Application application) {
         super(application);
@@ -35,7 +38,37 @@ public class NoteViewModel extends AndroidViewModel {
         currentUid.setValue(uid);
         mRepository.startFirestoreListener(uid);
         // Correctly get the active notes for the main screen
-        notes = mRepository.getNotesForUser(uid);
+        updateNotesSource(uid, "");
+    }
+
+    /**
+     * ✅ NEW: Called when the user types in the search bar.
+     */
+    public void search(String query) {
+        String uid = currentUid.getValue();
+        if (uid != null) {
+            updateNotesSource(uid, query);
+        }
+    }
+
+    /**
+     * Helper to switch the data source of the 'notes' LiveData.
+     */
+    private void updateNotesSource(String uid, String query) {
+        // 1. Remove the old source so we don't get updates from the wrong query
+        if (currentSource != null) {
+            notes.removeSource(currentSource);
+        }
+
+        // 2. Decide which source to use
+        if (query == null || query.trim().isEmpty()) {
+            currentSource = mRepository.getNotesForUser(uid);
+        } else {
+            currentSource = mRepository.searchNotes(uid, query);
+        }
+
+        // 3. Add the new source
+        notes.addSource(currentSource, notes::setValue);
     }
 
     public LiveData<List<Note>> getNotes() {

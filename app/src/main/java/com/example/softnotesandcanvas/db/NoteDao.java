@@ -106,4 +106,11 @@ public interface NoteDao {
      */
     @Query("DELETE FROM notes")
     void nukeTable();
+    /**
+     * ✅ NEW: Searches for notes that match the query in title or content.
+     * Checks against userId and ensures notes are not trashed or deleted.
+     */
+    @Query("SELECT * FROM notes WHERE userId = :userId AND is_trashed = 0 AND isDeleted = 0 AND (title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%') ORDER BY updatedAt DESC")
+    LiveData<List<Note>> searchNotes(String userId, String query);
+
 }

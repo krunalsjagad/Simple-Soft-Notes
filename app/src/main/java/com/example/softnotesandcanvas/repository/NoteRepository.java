@@ -65,6 +65,14 @@ public class NoteRepository {
     }
 
     /**
+     * ✅ NEW: Search notes by title or content.
+     */
+    public LiveData<List<Note>> searchNotes(String userId, String query) {
+        return noteDao.searchNotes(userId, query);
+    }
+
+
+    /**
      * ✅ CORRECTED: This method now correctly moves a note to the trash.
      * It uses the correct executor 'io' and the 'application' context.
      */
