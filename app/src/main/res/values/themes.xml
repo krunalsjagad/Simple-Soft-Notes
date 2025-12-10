@@ -6,6 +6,7 @@
     </style>
 
     <style name="Theme.SoftNotesAndCanvas" parent="Base.Theme.SoftNotesAndCanvas" />
+    <style name="Theme.SoftNotesAndCanvas.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar" />
     <style name="Theme.SoftNotesAndCanvas.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
     <style name="Theme.SoftNotesAndCanvas.PopupOverlay" parent="ThemeOverlay.Material3.Light" />
 </resources>
